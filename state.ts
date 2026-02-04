@@ -1,4 +1,3 @@
-
 import { ShopItem, RarityKey, ShopDetails } from "./types.js";
 
 export const state = {
@@ -10,6 +9,13 @@ export const state = {
     currentItem: null as ShopItem | null,
     
     locked: false, // Prevents editing when loaded from batch
+
+    // User Session
+    user: {
+        token: null as string | null,
+        username: null as string | null,
+        balance: 0
+    },
 
     // UI Builder State
     builderRows: [{ id: '1', qty: 1, baseId: '', tag: '', rarityKey: '' }] as { id: string, qty: number, baseId: string, tag: string, rarityKey: string }[],

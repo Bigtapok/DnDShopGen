@@ -1,7 +1,7 @@
 import { state } from "./state.js";
 import { processXLSX, loadDefaultData, downloadJson, copyMarkdown, downloadLogs } from "./xlsx.js";
 import { formatLabel } from "./utils.js";
-import { log, renderCard, refreshGrid, renderModal, renderRarityToggles, updateTagFilterDropdown, renderShopHeader, updateShopDropdowns, initShopDropdowns, initContextDropdowns, updateContextDropdowns } from "./ui.js";
+import { log, renderCard, refreshGrid, renderModal, renderRarityToggles, updateTagFilterDropdown, renderShopHeader, updateShopDropdowns, initShopDropdowns, initContextDropdowns, updateContextDropdowns, initAuth } from "./ui.js";
 import { generateShopInventory, generateUniquePoolBatch, generateShopDetails, getFilteredSrdItems } from "./SRD/srdShop.js";
 import { generateProceduralItems } from "./HBgen/generator.js";
 import { GoogleGenAI, Type } from "@google/genai";
@@ -313,6 +313,9 @@ export async function interpretPrompt(promptText: string) {
 window.addEventListener('DOMContentLoaded', async () => {
     // State for selected unique pool tags
     const selectedUniqueTags = new Set<string>();
+    
+    // Init Auth
+    await initAuth();
 
     // Moved up to be accessible by Load Code logic
     const activeChips = document.getElementById('activeTagChips');
@@ -480,7 +483,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    ['modalClose', 'batchClose', 'aboutClose'].forEach(id => {
+    ['modalClose', 'batchClose', 'aboutClose', 'authClose'].forEach(id => {
         const btn = document.getElementById(id);
         if (btn) btn.addEventListener('click', closeModals);
     });

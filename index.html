@@ -1,4 +1,4 @@
-   <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
@@ -49,7 +49,7 @@
             --text-muted: #64748b; /* Slate 500 */
 
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.05);
             /* Rarity Colors - slightly darker for light mode contrast */
             --rarity-common: #64748b;
@@ -141,7 +141,7 @@
         }
 
         /* Inputs */
-        input[type="text"], input[type="number"], select, textarea {
+        input[type="text"], input[type="number"], input[type="password"], select, textarea {
             background: var(--bg-input);
             border: 1px solid var(--border);
             color: var(--text-main);
@@ -1021,44 +1021,55 @@
             background: rgba(0,0,0,0.2);
             border: 1px solid var(--border);
         }
-        .srd-table-container h5 {
-            margin: 0;
-            padding: 0.5rem 0.75rem;
-            background: rgba(255,255,255,0.05);
-            font-size: 0.85rem;
-            color: var(--primary);
-            border-bottom: 1px solid var(--border);
-        }
-        .srd-table-container table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-        .srd-table-container th, .srd-table-container td {
-            padding: 0.4rem 0.75rem;
-            text-align: left;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .srd-table-container th {
-            color: var(--text-muted);
-            font-weight: 600;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-        }
-        .srd-table-container tr:last-child td { border-bottom: none; }
-        .srd-table-container tr:hover td { background: rgba(255,255,255,0.02); }
+
+            .srd-table-container h5 {
+                margin: 0;
+                padding: 0.5rem 0.75rem;
+                background: rgba(255,255,255,0.05);
+                font-size: 0.85rem;
+                color: var(--primary);
+                border-bottom: 1px solid var(--border);
+            }
+
+            .srd-table-container table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.85rem;
+            }
+
+            .srd-table-container th, .srd-table-container td {
+                padding: 0.4rem 0.75rem;
+                text-align: left;
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+            }
+
+            .srd-table-container th {
+                color: var(--text-muted);
+                font-weight: 600;
+                font-size: 0.75rem;
+                text-transform: uppercase;
+            }
+
+            .srd-table-container tr:last-child td {
+                border-bottom: none;
+            }
+
+            .srd-table-container tr:hover td {
+                background: rgba(255,255,255,0.02);
+            }
     </style>
 <link rel="stylesheet" href="/index.css">
 </head>
 <body>
-    <script type="importmap">
-        {
-          "imports": {
-            "@google/genai": "https://esm.sh/@google/genai@^1.39.0"
-          }
-        }
-    </script>
-    <script type="module" src="./index.tsx"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.39.0"
+  }
+}
+</script>
+ <script type="module" src="./index.tsx"></script>
 
     <header>
         <div class="app-title">D&D ShopGen <span class="version-badge">v3.5.6</span></div>
@@ -1069,6 +1080,8 @@
         </div>
         <div class="spacer"></div>
         <div class="controls-group">
+            <button id="currencyBtn" class="hidden" style="margin-right:0.5rem; background:rgba(255,215,0,0.1); color:#ffd700; border-color:rgba(255,215,0,0.3);">0 GP</button>
+            <button id="authBtn">Login / Register</button>
             <button id="aboutBtn" onclick="document.getElementById('aboutModal').classList.remove('hidden');document.getElementById('modalOverlay').style.display='flex'">About</button>
 
             <div class="settings-toggles">
@@ -1128,7 +1141,7 @@
                     <select id="ctxLaw" style="width:100%"><option>Loading...</option></select>
                 </div>
             </div>
- 
+
             <!-- SRD Controls (Hidden by default) -->
             <div id="srdGenControls" style="display:none; gap:1rem; margin-bottom:1rem; align-items:center;">
                 <div class="btn-group" style="display:flex; gap:0.5rem">
@@ -1136,7 +1149,7 @@
                     <button id="genModeUnique">List of All Items</button>
                 </div>
                 <div id="poolStatus" style="display:none; align-items:center; gap:0.5rem; font-size:0.9rem;">
-                     Pool: <span class="pool-count">0</span>
+                    Pool: <span class="pool-count">0</span>
                 </div>
             </div>
 
@@ -1167,6 +1180,7 @@
             </div>
         </div>
 
+        <!-- User Profile Modal -->
         <div class="results-area">
             <div id="shopHeader" class="shop-header hidden">
                 <!-- Populated by UI -->
@@ -1191,155 +1205,247 @@
                     <div id="statsBar" class="hidden" style="margin-left:auto; font-size:0.85rem; display:flex; gap:1rem; align-items:center; background:rgba(0,0,0,0.2); padding:4px 12px; border-radius:4px;">
                         <span>Total: <strong id="statTotal">0</strong></span>
                         <span style="color:var(--border)">|</span>
-                        <div id="statBreakdown" style="display:flex; gap:0.75rem"></div>
+                        <span id="statBreakdown"></span>
                     </div>
                 </div>
                 <!-- Rarity Filters -->
                 <div id="rarityFilters" style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; border-top:1px solid var(--border); padding-top:0.5rem;">
                     <!-- Populated by JS -->
                 </div>
-            </div>
 
-            <div id="resultsGrid" class="results-grid hidden"></div>
+                <div id="resultsGrid" class="results-grid hidden"></div>
 
-            <div id="emptyState" class="empty-state">
-                <div style="font-size:3rem; margin-bottom:1rem;">⚔️</div>
-                <p>Upload a Constitution XLSX or DB JSON to start.</p>
-                <p style="font-size:0.9rem">Supports Generator & SRD modes.</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="pipeline-logs">
-        <div class="log-header">
-            <strong>PIPELINE LOGS</strong>
-            <a href="#" onclick="window.downloadLogs('3.5.6', state.lastFilename); return false;" style="color:var(--primary); text-decoration:none;">Download Logs</a>
-        </div>
-        <div id="logContent"></div>
-    </div>
-
-    <!-- Modal Overlay -->
-    <div id="modalOverlay" class="modal-overlay" style="display:none;">
-        <!-- Item Details Modal -->
-        <div id="itemModal" class="modal hidden">
-            <div class="modal-header">
-                <h3 style="margin:0">Item Details</h3>
-                <button id="modalClose" style="background:none; border:none; color:inherit; font-size:1.5rem; cursor:pointer;">&times;</button>
-            </div>
-            <div style="padding:0 1.25rem; margin-top:1rem;">
-                <div class="modal-tabs">
-                    <div class="modal-tab active" id="tabDetailsBtn">Details</div>
-                    <div class="modal-tab" id="internalsTabBtn">Internals</div>
+                <div id="emptyState" class="empty-state">
+                    <div style="font-size:3rem; margin-bottom:1rem;">⚔️</div>
+                    <p>Upload a Constitution XLSX or DB JSON to start.</p>
+                    <p style="font-size:0.9rem">Supports Generator & SRD modes.</p>
                 </div>
             </div>
-            <div id="modalBody" class="modal-body"></div>
         </div>
 
-        <!-- Batch Code Modal -->
-        <div id="batchModal" class="modal hidden">
-            <div class="modal-header">
-                <h3 style="margin:0">Batch Code Configuration</h3>
-                <button id="batchClose" style="background:none; border:none; color:inherit; font-size:1.5rem; cursor:pointer;">&times;</button>
+        <div class="pipeline-logs">
+            <div class="log-header">
+                <strong>PIPELINE LOGS</strong>
+                <a href="#" onclick="window.downloadLogs('3.5.6', state.lastFilename); return false;" style="color:var(--primary); text-decoration:none;">Download Logs</a>
             </div>
-            <div style="padding:0 1.25rem; margin-top:1rem;">
-                <div class="modal-tabs">
-                    <div class="modal-tab active" id="tabLoadBatch">Load Code</div>
-                    <div class="modal-tab" id="tabSendBatch">Send (Share)</div>
+            <div id="logContent"></div>
+        </div>
+
+        <!-- Modal Overlay -->
+        <div id="modalOverlay" class="modal-overlay" style="display:none;">
+            <!-- Auth Modal -->
+            <div id="authModal" class="modal hidden" style="max-width:400px;">
+                <div class="modal-header">
+                    <h3 style="margin:0">Account</h3>
+                    <button id="authClose" style="background:none; border:none; color:inherit; font-size:1.5rem; cursor:pointer;">&times;</button>
+                </div>
+                <div style="padding:0 1.25rem; margin-top:1rem;">
+                    <div class="modal-tabs">
+                        <div class="modal-tab active" id="tabLogin">Login</div>
+                        <div class="modal-tab" id="tabRegister">Register</div>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div id="authStatusMsg" style="display:none; font-size:0.9rem; margin-bottom:1rem; padding:0.5rem; background:rgba(0,0,0,0.2); border-radius:4px;"></div>
+
+                    <div id="viewLogin">
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; margin-bottom:0.4rem; font-size:0.9rem; color:var(--text-muted);">Email</label>
+                            <input type="email" id="loginEmail" style="width:100%" placeholder="Enter email">
+                        </div>
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; margin-bottom:0.4rem; font-size:0.9rem; color:var(--text-muted);">Password</label>
+                            <input type="password" id="loginPass" style="width:100%" placeholder="Enter password">
+                        </div>
+                        <button id="doLoginBtn" class="primary" style="width:100%;">Log In</button>
+                    </div>
+
+                    <div id="viewRegister" class="hidden">
+                        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">Create an account to save your balance and settings.</p>
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; margin-bottom:0.4rem; font-size:0.9rem; color:var(--text-muted);">Username</label>
+                            <input type="text" id="regUser" style="width:100%" placeholder="Choose a username">
+                        </div>
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; margin-bottom:0.4rem; font-size:0.9rem; color:var(--text-muted);">Email</label>
+                            <input type="email" id="regEmail" style="width:100%" placeholder="Enter email">
+                        </div>
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; margin-bottom:0.4rem; font-size:0.9rem; color:var(--text-muted);">Password</label>
+                            <input type="password" id="regPass" style="width:100%" placeholder="Create a password">
+                        </div>
+                        <button id="doRegisterBtn" class="primary" style="width:100%;">Register</button>
+                    </div>
+                </div>
+                 </div>
+
+            <!-- User Profile Modal -->
+            <div id="userProfileModal" class="modal hidden" style="max-width:320px;">
+                <div class="modal-header">
+                    <h3 style="margin:0">User Profile</h3>
+                    <button id="profileClose" style="background:none; border:none; color:inherit; font-size:1.5rem; cursor:pointer;">&times;</button>
+                </div>
+                <div class="modal-body" style="text-align:center; padding: 2rem 1.25rem;">
+                    <div style="font-size:3rem; margin-bottom:0.5rem;">👤</div>
+                    <h3 id="profileName" style="margin:0 0 1.5rem 0; color:var(--primary);">User</h3>
+                    <button id="doLogoutBtn" class="primary" style="width:100%; background:var(--danger); border-color:var(--danger);">Log Out</button>
                 </div>
             </div>
-            <div class="modal-body">
-                <div id="batchLoadView">
-                    <p style="font-size:0.8rem; margin-bottom:0.5rem; color:var(--text-muted)">Paste a Batch Code here to restore a shop configuration. Hidden fields will be respected.</p>
-                    <textarea id="batchLoadArea" style="width:100%; height:150px; font-family:monospace; font-size:0.8rem;"></textarea>
-                    <button id="executeLoadBatchBtn" class="primary" style="width:100%; margin-top:1rem;">Load & Generate</button>
+
+            <!-- Currency Modal -->
+            <div id="currencyModal" class="modal hidden" style="max-width:400px;">
+                <div class="modal-header">
+                    <h3 style="margin:0">Wallet</h3>
+                    <button id="currencyClose" style="background:none; border:none; color:inherit; font-size:1.5rem; cursor:pointer;">&times;</button>
                 </div>
-                <div id="batchSendView" class="hidden">
+                <div style="padding:0 1.25rem; margin-top:1rem;">
+                    <div class="modal-tabs">
+                        <div class="modal-tab active" id="tabSendGP">Send GP</div>
+                        <div class="modal-tab" id="tabBuyGP">Buy GP</div>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div id="viewSendGP">
+                        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">Transfer GP to another user.</p>
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; margin-bottom:0.4rem; font-size:0.9rem; color:var(--text-muted);">Recipient</label>
+                            <input type="text" id="sendRecipient" style="width:100%" placeholder="Username">
+                        </div>
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; margin-bottom:0.4rem; font-size:0.9rem; color:var(--text-muted);">Amount (GP)</label>
+                            <input type="number" id="sendAmount" style="width:100%" placeholder="0" min="1">
+                        </div>
+                        <button id="doSendBtn" class="primary" style="width:100%;">Send</button>
+                    </div>
+                    <div id="viewBuyGP" class="hidden">
+                        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">Purchase more GP.</p>
+                        <div style="margin-bottom:1rem;">
+                             <label style="display:block; margin-bottom:0.4rem; font-size:0.9rem; color:var(--text-muted);">Amount (GP)</label>
+                            <input type="number" id="buyAmount" style="width:100%" placeholder="100" min="1">
+                        </div>
+                         <button id="doBuyBtn" class="primary" style="width:100%;">Purchase</button>
+                    </div>
+                </div>
+            </div>
 
-                    <!-- Shop Details Configuration -->
-                    <div class="shop-config-section" style="margin-bottom: 1rem; border:1px solid var(--border); padding:0.75rem; border-radius:8px;">
-                        <strong style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted)">Shop Details (Edit Manually or Select)</strong>
-                        <div class="shop-config-grid">
-                            <!-- Replaced Selects with Inputs + Datalists for custom entry -->
-                            <input type="text" id="cfgShopPrefix" list="listShopPrefix" placeholder="Prefix" title="Name Prefix">
-                            <datalist id="listShopPrefix"></datalist>
+            <!-- Item Details Modal -->
+            <div id="itemModal" class="modal hidden">
+                <div class="modal-header">
+                    <h3 style="margin:0">Item Details</h3>
+                    <button id="modalClose" style="background:none; border:none; color:inherit; font-size:1.5rem; cursor:pointer;">&times;</button>
+                </div>
+                 <div style="padding:0 1.25rem; margin-top:1rem;">
+                    <div class="modal-tabs">
+                        <div class="modal-tab active" id="tabDetailsBtn">Details</div>
+                        <div class="modal-tab" id="internalsTabBtn">Internals</div>
+                    </div>
+                </div>
+                <div id="modalBody" class="modal-body"></div>
+            </div>
 
-                            <input type="text" id="cfgShopNoun" list="listShopNoun" placeholder="Noun" title="Name Noun">
-                            <datalist id="listShopNoun"></datalist>
+            <!-- Batch/Config Modal -->
+            <div id="batchModal" class="modal hidden" style="max-width:600px;">
+                <div class="modal-header">
+                    <h3 style="margin:0">Batch & Shop Config</h3>
+                    <button id="batchClose" style="background:none; border:none; color:inherit; font-size:1.5rem; cursor:pointer;">&times;</button>
+                </div>
+                <div style="padding:0 1.25rem; margin-top:1rem;">
+                    <div class="modal-tabs">
+                        <div class="modal-tab active" id="tabLoadBatch">Load Shop</div>
+                        <div class="modal-tab" id="tabSendBatch">Save / Config</div>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <!-- Load View -->
+                    <div id="batchLoadView">
+                        <p style="font-size:0.9rem; color:var(--text-muted);">Paste a batch code string to restore a shop.</p>
+                        <textarea id="batchLoadArea" style="width:100%; height:150px; margin-bottom:1rem; font-family:monospace; font-size:0.8rem;" placeholder="Paste code here..."></textarea>
+                        <button id="executeLoadBatchBtn" class="primary" style="width:100%">Load Shop</button>
+                    </div>
 
-                            <input type="text" id="cfgShopSuffix" list="listShopSuffix" placeholder="Suffix" title="Name Suffix">
-                            <datalist id="listShopSuffix"></datalist>
-
-                            <div class="shop-config-full">
-                                <input type="text" id="cfgShopType" list="listShopType" placeholder="Shop Type" style="width:100%">
-                                <datalist id="listShopType"></datalist>
-                            </div>
-
-                            <input type="text" id="cfgMerchFirst" list="listMerchFirst" placeholder="Merchant Name" title="First Name">
-                            <datalist id="listMerchFirst"></datalist>
-
-                            <input type="text" id="cfgMerchLast" list="listMerchLast" placeholder="Merchant Surname" title="Last Name">
-                            <datalist id="listMerchLast"></datalist>
-
-                            <input type="text" id="cfgMerchRace" list="listMerchRace" placeholder="Race" title="Race">
-                            <datalist id="listMerchRace"></datalist>
-
-                            <div class="shop-config-full">
-                                <input type="text" id="cfgMerchPers" list="listMerchPers" placeholder="Personality" style="width:100%">
-                                <datalist id="listMerchPers"></datalist>
+                    <!-- Save/Config View -->
+                    <div id="batchSendView" class="hidden">
+                        <!-- Shop Config -->
+                        <div class="shop-config-section" style="margin-bottom: 1rem; border:1px solid var(--border); padding:0.75rem; border-radius:8px; background:rgba(0,0,0,0.1);">
+                            <strong style="display:block; margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-muted)">Shop Identity</strong>
+                            <div class="shop-config-grid">
+                                <input type="text" id="cfgShopPrefix" list="listShopPrefix" placeholder="Prefix">
+                                <datalist id="listShopPrefix"></datalist>
+                                <input type="text" id="cfgShopNoun" list="listShopNoun" placeholder="Noun">
+                                <datalist id="listShopNoun"></datalist>
+                                <input type="text" id="cfgShopSuffix" list="listShopSuffix" placeholder="Suffix">
+                                <datalist id="listShopSuffix"></datalist>
+                                <div class="shop-config-full">
+                                    <input type="text" id="cfgShopType" list="listShopType" placeholder="Shop Type">
+                                    <datalist id="listShopType"></datalist>
+                                </div>
+                                <input type="text" id="cfgMerchFirst" list="listMerchFirst" placeholder="Merchant Name">
+                                <datalist id="listMerchFirst"></datalist>
+                                <input type="text" id="cfgMerchLast" list="listMerchLast" placeholder="Surname">
+                                <datalist id="listMerchLast"></datalist>
+                                <input type="text" id="cfgMerchRace" list="listMerchRace" placeholder="Race">
+                                <datalist id="listMerchRace"></datalist>
+                                 <div class="shop-config-full">
+                                    <input type="text" id="cfgMerchPers" list="listMerchPers" placeholder="Personality">
+                                    <datalist id="listMerchPers"></datalist>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                        
+                        <div style="margin-bottom:1rem;">
+                            <label style="display:block; margin-bottom:0.4rem; font-size:0.8rem; color:var(--text-muted);">Batch Options (Hide in code)</label>
+                            <div style="display:flex; flex-wrap:wrap; gap:1rem;">
+                                 <label><input type="checkbox" id="toggleHidePrice"> Price</label>
+                                 <label><input type="checkbox" id="toggleHideDesc"> Desc</label>
+                                 <label><input type="checkbox" id="toggleHideName"> Name</label>
+                                 <label><input type="checkbox" id="toggleHideRarity"> Rarity</label>
+                                 <label><input type="checkbox" id="toggleHideType"> Type</label>
+                            </div>
+                        </div>
 
-                    <div style="margin-bottom:1rem; display:flex; gap:1rem; flex-wrap:wrap;">
-                        <label class="switch-label"><input type="checkbox" id="toggleHidePrice" class="switch-input"> Hide Price</label>
-                        <label class="switch-label"><input type="checkbox" id="toggleHideDesc" class="switch-input"> Hide Description</label>
-                        <label class="switch-label"><input type="checkbox" id="toggleHideName" class="switch-input"> Hide Name</label>
-                        <label class="switch-label"><input type="checkbox" id="toggleHideRarity" class="switch-input"> Hide Rarity</label>
-                        <label class="switch-label"><input type="checkbox" id="toggleHideType" class="switch-input"> Hide Type</label>
+                        <button id="executeGenCodeBtn" style="width:100%; margin-bottom:0.5rem;">Generate Code</button>
+                        <textarea id="batchSendArea" readonly style="width:100%; height:80px; font-family:monospace; font-size:0.8rem; color:var(--text-muted);" placeholder="Code will appear here..."></textarea>
                     </div>
-                    <button id="executeGenCodeBtn" style="width:100%; margin-bottom:1rem;">Generate Code</button>
-                    <textarea id="batchSendArea" style="width:100%; height:100px; font-family:monospace; font-size:0.8rem;" readonly></textarea>
+                </div>
+            </div>
+
+            <!-- About Modal -->
+            <div id="aboutModal" class="modal hidden">
+                <div class="modal-header">
+                    <h3>About D&D ShopGen</h3>
+                    <button id="aboutClose" style="background:none; border:none; color:inherit; font-size:1.5rem; cursor:pointer;">&times;</button>
+                </div>
+                <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6;">
+                    <p><strong>Version:</strong> 3.5.6</p>
+                    <p>A browser-based procedural generation tool for D&D 5e items and shops.</p>
+                    <p>For all questions, problems, and suggestions, please contact us by <a href="mailto:Zloibigtapok@gmail.com" style="color:var(--primary)">Zloibigtapok@gmail.com</a></p>
+
+                    <hr style="border: 0; border-top: 1px solid var(--border); margin: 1rem 0;">
+
+                    <h4 style="margin-bottom:0.5rem; color:var(--text-main);">COMPATIBILITY</h4>
+                    <p style="margin-top:0; color:var(--text-muted);">This product is 5E compatible.</p>
+
+                    <h4 style="margin-bottom:0.5rem; color:var(--text-main);">LEGAL / ATTRIBUTION</h4>
+                    <p style="margin-top:0; color:var(--text-muted);">
+                        This work includes material from the System Reference Document 5.2.1 (“SRD 5.2.1”) by Wizards of the
+                        Coast LLC, available at <a href="https://www.dndbeyond.com/srd" target="_blank" style="color:var(--primary)">https://www.dndbeyond.com/srd</a>. The SRD 5.2.1 is licensed under the Creative
+                        Commons Attribution 4.0 International License, available at <a href="https://creativecommons.org/licenses/by/4.0/legalcode" target="_blank" style="color:var(--primary)">https://creativecommons.org/licenses/by/4.0/legalcode</a>.
+                    </p>
+
+                    <h4 style="margin-bottom:0.5rem; color:var(--text-main);">LICENSE NOTICE</h4>
+                    <p style="margin-top:0; color:var(--text-muted);">
+                        The SRD 5.2.1 content used in this application is provided under the Creative Commons Attribution 4.0
+                        International License (CC BY 4.0). You can review the license terms at the link above.
+                    </p>
+
+                    <h4 style="margin-bottom:0.5rem; color:var(--text-main);">DISCLAIMER</h4>
+                    <p style="margin-top:0; color:var(--text-muted);">
+                        This application is provided “as is”, without warranties of any kind. To the maximum extent permitted by law,
+                        the developer is not liable for any damages or losses arising from the use of this application.
+                    </p>
                 </div>
             </div>
         </div>
-        <!-- About Modal -->
-        <div id="aboutModal" class="modal hidden">
-            <div class="modal-header">
-                <h3>About D&D ShopGen</h3>
-                <button id="aboutClose" style="background:none; border:none; color:inherit; font-size:1.5rem; cursor:pointer;">&times;</button>
-            </div>
-            <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6;">
-                <p><strong>Version:</strong> 3.5.6</p>
-                <p>A browser-based procedural generation tool for D&D 5e items and shops.</p>
-                <p>Built with Typescript, XLSX, and love.</p>
-
-                <hr style="border: 0; border-top: 1px solid var(--border); margin: 1rem 0;">
-
-                <h4 style="margin-bottom:0.5rem; color:var(--text-main);">COMPATIBILITY</h4>
-                <p style="margin-top:0; color:var(--text-muted);">This product is 5E compatible.</p>
-
-                <h4 style="margin-bottom:0.5rem; color:var(--text-main);">LEGAL / ATTRIBUTION</h4>
-                <p style="margin-top:0; color:var(--text-muted);">
-                    This work includes material from the System Reference Document 5.2.1 (“SRD 5.2.1”) by Wizards of the
-                    Coast LLC, available at <a href="https://www.dndbeyond.com/srd" target="_blank" style="color:var(--primary)">https://www.dndbeyond.com/srd</a>. The SRD 5.2.1 is licensed under the Creative
-                    Commons Attribution 4.0 International License, available at <a href="https://creativecommons.org/licenses/by/4.0/legalcode" target="_blank" style="color:var(--primary)">https://creativecommons.org/licenses/by/4.0/legalcode</a>.
-                </p>
-
-                <h4 style="margin-bottom:0.5rem; color:var(--text-main);">LICENSE NOTICE</h4>
-                <p style="margin-top:0; color:var(--text-muted);">
-                    The SRD 5.2.1 content used in this application is provided under the Creative Commons Attribution 4.0
-                    International License (CC BY 4.0). You can review the license terms at the link above.
-                </p>
-
-                <h4 style="margin-bottom:0.5rem; color:var(--text-main);">DISCLAIMER</h4>
-                <p style="margin-top:0; color:var(--text-muted);">
-                    This application is provided “as is”, without warranties of any kind. To the maximum extent permitted by law,
-                    the developer is not liable for any damages or losses arising from the use of this application.
-                </p>
-            </div>
-        </div>
-    </div>
-
-<script type="module" src="/index.tsx"></script>
+        <script type="module" src="/index.tsx"></script>
 </body>
 </html>
