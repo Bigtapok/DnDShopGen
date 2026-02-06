@@ -1,10 +1,13 @@
 import { state } from "./state.js";
-import { processXLSX, loadDefaultData, downloadJson, copyMarkdown, downloadLogs } from "./xlsx.js";
+import { loadDefaultData, downloadJson, copyMarkdown, downloadLogs } from "./xlsx.js";
 import { formatLabel } from "./utils.js";
-import { log, renderCard, refreshGrid, renderModal, renderRarityToggles, updateTagFilterDropdown, renderShopHeader, updateShopDropdowns, initShopDropdowns, initContextDropdowns, updateContextDropdowns, initAuth } from "./ui.js";
+import { log, renderCard, renderSavedShops, refreshGrid, renderModal, renderRarityToggles, updateTagFilterDropdown, renderShopHeader, updateShopDropdowns, initShopDropdowns, initContextDropdowns, updateContextDropdowns, initAuth } from "./ui.js";
 import { generateShopInventory, generateUniquePoolBatch, generateShopDetails, getFilteredSrdItems } from "./SRD/srdShop.js";
 import { generateProceduralItems } from "./HBgen/generator.js";
+import { apiGetUsers, apiSaveGeneration } from "./auth.js";
 import { GoogleGenAI, Type } from "@google/genai";
+import './style.css';
+
 
 const overlay = document.getElementById('overlay');
 // Make downloads global
@@ -12,9 +15,20 @@ const overlay = document.getElementById('overlay');
 (window as any).copyMarkdown = copyMarkdown;
 (window as any).downloadLogs = downloadLogs;
 
+// Helper to update Saved Tab visibility
+function updateSavedTabVisibility() {
+    const btn = document.getElementById('modeSavedBtn');
+    if (btn) {
+        if (state.user.token) btn.classList.remove('hidden');
+        else btn.classList.add('hidden');
+    }
+    // Update save button in header
+    renderShopHeader();
+}
+
 // Helper to update SRD specific UI visibility
 function updateSrdUi() {
-        const isSrd = state.currentMode === 'srd';
+    const isSrd = state.currentMode === 'srd';
     const isUnique = state.srdGenMode === 'unique';
 
     // Toggle SRD controls container
@@ -28,7 +42,8 @@ function updateSrdUi() {
     // Toggle panels
     const tagSelector = document.getElementById('srdTagSelector');
     const builderPanel = document.getElementById('builderModePanel');
-
+    const toggleLogsBtn = document.getElementById('toggleLogsBtn');
+    const logsPanel = document.getElementById('logsPanel');
     // Toggle Context Controls: Show in Generator mode OR (SRD mode AND Random)
     const contextControls = document.getElementById('contextControls');
     if (contextControls) {
@@ -54,6 +69,19 @@ function updateSrdUi() {
     }
 
     renderBuilder();
+}
+
+function updateModalInternalsVisibility() {
+    const tab = document.getElementById('tabInternals');
+    if (tab) {
+        if (state.settings.internals) {
+            tab.classList.remove('hidden');
+        } else {
+            tab.classList.add('hidden');
+        }
+    } else {
+        document.body.classList.remove('show-internals');
+    }
 }
 
 export function renderBuilder() {
@@ -313,7 +341,7 @@ export async function interpretPrompt(promptText: string) {
 window.addEventListener('DOMContentLoaded', async () => {
     // State for selected unique pool tags
     const selectedUniqueTags = new Set<string>();
-    
+
     // Init Auth
     await initAuth();
 
@@ -372,26 +400,6 @@ window.addEventListener('DOMContentLoaded', async () => {
             });
         }
     });
-
-    // 2. Setup Upload Listener
-    const xlsxInput = document.getElementById('xlsxInput');
-    if (xlsxInput) {
-        xlsxInput.addEventListener('change', async (e: any) => {
-            if (e.target.files.length > 0) {
-                await processXLSX(e.target.files[0]);
-                renderBuilder();
-                refreshGrid();
-                initShopDropdowns();
-                initContextDropdowns();
-                // Re-attach listeners in case DOM was rebuilt (it wasn't, but safety)
-                ['ctxSettlement', 'ctxWealth', 'ctxBiome', 'ctxLaw'].forEach(id => {
-                    document.getElementById(id)?.addEventListener('change', () => {
-                        setTimeout(() => renderBuilder(), 0);
-                    });
-                });
-            }
-        });
-    }
 
     // 3. Generation Logic (Button Click)
     const genBtn = document.getElementById('generateBtn') as HTMLButtonElement;
@@ -492,6 +500,69 @@ window.addEventListener('DOMContentLoaded', async () => {
         if (e.key === 'Escape') closeModals();
     });
 
+    // Admin Users Logic
+    const adminBtn = document.getElementById('adminUsersBtn');
+    if (adminBtn) {
+        adminBtn.addEventListener('click', async () => {
+            if (!state.user.token || state.user.role !== 'admin') return;
+
+            const modal = document.getElementById('adminUsersModal');
+            const listEl = document.getElementById('adminUsersList');
+            const overlay = document.getElementById('modalOverlay');
+
+            if (modal && overlay && listEl) {
+                modal.classList.remove('hidden');
+                overlay.style.display = 'flex';
+                listEl.innerHTML = '<div style="padding:1rem; text-align:center;">Fetching users...</div>';
+
+                try {
+                    const users = await apiGetUsers(state.user.token);
+                    // Sort by ID
+                    users.sort((a: any, b: any) => (a.id || 0) - (b.id || 0));
+
+                    if (users.length === 0) {
+                        listEl.innerHTML = '<div style="padding:1rem; text-align:center;">No users found.</div>';
+                        return;
+                    }
+
+                    let html = `
+                        <table style="width:100%; border-collapse: collapse; font-size:0.9rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid var(--border); text-align:left;">
+                                    <th style="padding:8px; color:var(--text-muted);">ID</th>
+                                    <th style="padding:8px; color:var(--text-muted);">Login</th>
+                                    <th style="padding:8px; color:var(--text-muted);">Email</th>
+                                    <th style="padding:8px; color:var(--text-muted);">Role</th>
+                                    <th style="padding:8px; color:var(--text-muted);">Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    users.forEach((u: any) => {
+                        html += `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <td style="padding:8px;">${u.id}</td>
+                                <td style="padding:8px; font-weight:600;">${u.login}</td>
+                                <td style="padding:8px;">${u.email || '-'}</td>
+                                <td style="padding:8px;">${u.role || 'user'}</td>
+                                <td style="padding:8px; color:var(--text-muted); font-size:0.8rem;">
+                                    ${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '-'}
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `</tbody></table>`;
+                    listEl.innerHTML = html;
+
+                } catch (e) {
+                    listEl.innerHTML = `<div style="padding:1rem; text-align:center; color:var(--danger);">Error fetching users.</div>`;
+                }
+            }
+        });
+    }
+
     // 5. Results Interaction (Open Details)
     const resultsGrid = document.getElementById('resultsGrid');
     if (resultsGrid) {
@@ -537,6 +608,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 7. Header Toggles & Controls
+
     const themeToggle = document.getElementById('themeToggle') as HTMLInputElement;
     if (themeToggle) {
         state.settings.theme = themeToggle.checked ? 'dark' : 'light';
@@ -548,15 +620,34 @@ window.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    const logsPanel = document.getElementById('pipelineLogsPanel');
+    const toggleLogsBtn = document.getElementById('toggleLogsBtn');
+
+    // Initialize Logs visibility
+    if (logsPanel) {
+        if (!state.settings.debug) logsPanel.classList.add('hidden');
+    }
+
+    // Collapse Button Logic
+    if (toggleLogsBtn && logsPanel) {
+        toggleLogsBtn.addEventListener('click', () => {
+            logsPanel.classList.toggle('collapsed');
+            const isCollapsed = logsPanel.classList.contains('collapsed');
+            toggleLogsBtn.textContent = isCollapsed ? '▲' : '▼';
+        });
+    }
+
     document.getElementById('debugToggle')?.addEventListener('change', (e: any) => {
         state.settings.debug = e.target.checked;
         log(`Debug mode ${state.settings.debug ? 'enabled' : 'disabled'}.`);
-        refreshGrid();
-    });
 
-    document.getElementById('imagesToggle')?.addEventListener('change', (e: any) => {
-        state.settings.images = e.target.checked;
-        log(`Image generation ${state.settings.images ? 'enabled' : 'disabled'}.`);
+        // Toggle logs visibility based on debug state
+        if (logsPanel) {
+            if (state.settings.debug) logsPanel.classList.remove('hidden');
+            else logsPanel.classList.add('hidden');
+        }
+
+        refreshGrid();
     });
 
     document.getElementById('internalsToggle')?.addEventListener('change', (e: any) => {
@@ -594,9 +685,84 @@ window.addEventListener('DOMContentLoaded', async () => {
         log('Cleared results.');
     });
 
+    // Export Buttons
+    document.getElementById('exportJsonBtn')?.addEventListener('click', () => {
+        downloadJson(state.generatedItems, '3.6', false);
+    });
+
+    document.getElementById('exportFullBtn')?.addEventListener('click', () => {
+        downloadJson(state.generatedItems, '3.6', true);
+    });
+
+    document.getElementById('copyMdBtn')?.addEventListener('click', () => {
+        copyMarkdown(state.generatedItems, '3.6');
+    });
+
+    // About Button
+    document.getElementById('aboutBtn')?.addEventListener('click', () => {
+        const modal = document.getElementById('aboutModal');
+        const overlay = document.getElementById('modalOverlay');
+        if (modal && overlay) {
+            modal.classList.remove('hidden');
+            overlay.style.display = 'flex';
+        }
+    });
+
+    // Download Logs Button
+    document.getElementById('downloadLogsBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        downloadLogs('3.6', state.lastFilename);
+    });
+
     // 8. Mode Tabs (Generator vs SRD)
     const modeGenBtn = document.getElementById('modeGeneratorBtn');
     const modeSrdBtn = document.getElementById('modeSRDBtn');
+    const modeSavedBtn = document.getElementById('modeSavedBtn');
+    const savedPanel = document.getElementById('savedShopsPanel');
+    const genControls = document.getElementById('builderModePanel'); // and others
+    // We need to manage visibility of "Generator Controls" vs "Saved List"
+    // The existing structure has `promptPanel` containing builder/text inputs.
+    // `savedShopsPanel` is inside `promptPanel` (based on my edit to index.html).
+
+    function switchMode(mode: 'generator' | 'srd' | 'saved') {
+        if (modeGenBtn) modeGenBtn.addEventListener('click', () => switchMode('generator'));
+        if (modeSrdBtn) modeSrdBtn.addEventListener('click', () => switchMode('srd'));
+        if (modeSavedBtn) modeSavedBtn.addEventListener('click', () => switchMode('saved'));
+
+        // Periodically check auth to toggle Saved Tab (simple poll to avoid complex event bus changes)
+        setInterval(updateSavedTabVisibility, 1000);
+
+        // Toggle Saved Panel
+        if (savedPanel) savedPanel.classList.toggle('hidden', mode !== 'saved');
+
+        // Toggle Generator Specifics
+        const showGen = mode !== 'saved';
+        // Note: updateSrdUi handles hiding builderModePanel vs SRD panels
+        // We just need to ensure savedPanel hides both.
+
+        // Hide standard panels if saved
+        const builder = document.getElementById('builderModePanel');
+        const text = document.getElementById('textModePanel');
+        const srdControls = document.getElementById('srdGenControls');
+        const ctxControls = document.getElementById('contextControls');
+        const genBar = document.querySelector('.generate-bar') as HTMLElement;
+
+        if (mode === 'saved') {
+            if (builder) builder.classList.add('hidden');
+            if (text) text.classList.add('hidden');
+            if (srdControls) srdControls.style.display = 'none'; // direct style override
+            if (ctxControls) ctxControls.classList.add('hidden');
+            if (genBar) genBar.classList.add('hidden');
+
+            // Fetch list
+            renderSavedShops();
+        } else {
+            if (genBar) genBar.classList.remove('hidden');
+            // Re-run standard UI update to show correct generator panels
+            state.currentMode = mode === 'srd' ? 'srd' : 'generator';
+            updateSrdUi();
+        }
+    }
     if (modeGenBtn && modeSrdBtn) {
         modeGenBtn.addEventListener('click', () => {
             state.currentMode = 'generator';
@@ -756,7 +922,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             }, {});
 
             const payload = {
-                version: '3.5.6',
+                version: '3.6',
                 rows: state.builderRows,
                 vis: state.batchVisibility,
                 context: state.shopContext,

@@ -1,45 +1,114 @@
-import { ShopItem, RarityKey, ShopDetails } from "./types.js";
 
-export const state = {
-    db: {} as Record<string, any[]>,
-    srdDb: {} as Record<string, any[]>, // Separated SRD Data Source
-    currentMode: 'generator' as 'generator' | 'srd',
-    inputMode: 'builder' as 'builder' | 'text',
-    generatedItems: [] as ShopItem[],
-    currentItem: null as ShopItem | null,
+
+import { ShopItem, RarityKey } from "./types.js";
+
+export const RARITY_ORDER: RarityKey[] = ['common', 'uncommon', 'rare', 'very_rare', 'legendary'];
+
+export interface State {
+    db: any;
+    srdDb: any;
+    srdTagsIndex: { tag: string; count: number }[];
+    lastFilename: string;
     
-    locked: false, // Prevents editing when loaded from batch
-
-    // User Session
     user: {
-        token: null as string | null,
-        username: null as string | null,
+        token: string | null;
+        username: string | null;
+        role: string | null;
+        balance: number;
+    };
+    
+    currentMode: 'generator' | 'srd';
+    inputMode: 'builder' | 'text';
+    srdGenMode: 'random' | 'unique';
+    locked: boolean;
+    
+    builderRows: { id: string; qty: number; baseId: string; tag: string; rarityKey: string }[];
+    
+    shopDetails: {
+        namePrefix: string;
+        nameNoun: string;
+        nameSuffix: string;
+        shopType: string;
+        merchantFirst: string;
+        merchantLast: string;
+        merchantRace: string;
+        merchantPersonality: string;
+    };
+    
+    shopContext: {
+        settlement: string;
+        wealth: string;
+        biome: string;
+        law: string;
+    };
+    
+    generatedItems: ShopItem[];
+    currentItem?: ShopItem | null;
+    
+    batchVisibility: {
+        hidePrice: boolean;
+        hideDescription: boolean;
+        hideName: boolean;
+        hideRarity: boolean;
+        hideType: boolean;
+    };
+    
+    filters: {
+        activeTag: string;
+        search: string;
+        rarities: Set<string>;
+        sort: string;
+    };
+    
+    settings: {
+        seed: string;
+        debug: boolean;
+        internals: boolean;
+        theme: string;
+    };
+}
+
+export const state: State = {
+    db: {},
+    srdDb: {},
+    srdTagsIndex: [],
+    lastFilename: '',
+
+    user: {
+        token: null,
+        username: null,
+        role: null,
         balance: 0
     },
 
-    // UI Builder State
-    builderRows: [{ id: '1', qty: 1, baseId: '', tag: '', rarityKey: '' }] as { id: string, qty: number, baseId: string, tag: string, rarityKey: string }[],
+    currentMode: 'generator',
+    inputMode: 'builder',
+    srdGenMode: 'random',
+    locked: false,
 
-    settings: {
-        debug: true,
-        internals: false,
-        theme: 'dark' as 'light' | 'dark',
-        images: false,
-        seed: ''
-    },
-    
-    // Shop Identity
+    builderRows: [],
+
     shopDetails: {
-        namePrefix: '',
-        nameNoun: '',
-        nameSuffix: '',
-        shopType: '',
-        merchantFirst: '',
-        merchantLast: '',
-        merchantRace: '',
-        merchantPersonality: ''
-    } as ShopDetails,
-    
+        namePrefix: "",
+        nameNoun: "",
+        nameSuffix: "",
+        shopType: "",
+        merchantFirst: "",
+        merchantLast: "",
+        merchantRace: "",
+        merchantPersonality: ""
+    },
+
+    shopContext: {
+        settlement: "village",
+        wealth: "standard",
+        biome: "plains",
+        law: "law_abiding"
+    },
+
+    generatedItems: [],
+    currentItem: null,
+
     batchVisibility: {
         hidePrice: false,
         hideDescription: false,
@@ -47,37 +116,18 @@ export const state = {
         hideRarity: false,
         hideType: false
     },
-    
+
     filters: {
-        search: '',
-        rarities: new Set<RarityKey>(['common', 'uncommon', 'rare', 'very_rare', 'legendary']),
-        sort: 'none',
-        activeTag: '',
-        srdTags: new Set<string>(),
-        srdTagMatchMode: 'all' as 'all' | 'any'
+        activeTag: "",
+        search: "",
+        rarities: new Set(),
+        sort: "default"
     },
-    
-    // Shop Generation Context
-    shopContext: {
-        wealth: 'average',
-        settlement: 'town',
-        biome: 'general',
-        law: 'normal'
-    },
-    
-    srdGenMode: 'random' as 'random' | 'unique',
-    srdUniquePool: [] as any[],
-    srdUniquePoolKey: '',
-    
-    srdTagsIndex: [] as { tag: string, count: number }[],
 
-    counters: {
-        names: new Map<string, number>(),
-        patterns: new Map<string, number>(),
-        total: 0
-    },
-    
-    lastFilename: 'None'
+    settings: {
+        seed: "",
+        debug: false,
+        internals: false,
+        theme: 'dark'
+    }
 };
-
-export const RARITY_ORDER: RarityKey[] = ['common', 'uncommon', 'rare', 'very_rare', 'legendary'];

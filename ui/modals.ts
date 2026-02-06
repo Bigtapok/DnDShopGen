@@ -33,18 +33,6 @@ export function renderModal(item: ShopItem, tab: 'details' | 'internals') {
     const showRarity = !state.batchVisibility.hideRarity;
     // Note: Type/Subtitle is mostly part of description content or header in modal
 
-    // Image logic
-    const imageHtml = state.settings.images
-        ? `<div class="modal-image-container">
-            ${item.imageUrl
-            ? `<img src="${item.imageUrl}" class="modal-image" alt="${item.name}">`
-            : `<div class="modal-image-placeholder">
-                    <div class="spinner"></div>
-                    <span>Visualizing item...</span>
-                   </div>`}
-          </div>`
-        : "";
-
     // Editable Price HTML
     let priceHtml = "";
     if (showPrice) {
@@ -192,7 +180,6 @@ export function renderModal(item: ShopItem, tab: 'details' | 'internals') {
     }
 
     targetEl.innerHTML = `
-        ${imageHtml}
         <div class="modal-header-content" style="margin-bottom:1rem;">
             <div class="badge ${rarityClass}" style="${rarityStyle}">${rarityLabel}</div>
             <h2 style="margin: 0.5rem 0;">${nameDisplay}</h2>
@@ -290,5 +277,13 @@ export function renderModal(item: ShopItem, tab: 'details' | 'internals') {
             if (aucStep) aucStep.addEventListener('input', updateAuction);
             if (aucRoll) aucRoll.addEventListener('input', updateAuction);
         }
+    }
+}
+
+export function updateModalInternalsVisibility() {
+    const tab = document.getElementById('tabInternals');
+    if (tab) {
+         if (state.settings.internals) tab.classList.remove('hidden');
+         else tab.classList.add('hidden');
     }
 }

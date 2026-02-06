@@ -1,79 +1,27 @@
 import { state } from "../state.js";
-import { apiLogin, apiRegister, apiGetBalance, logout } from "../auth.js";
+import { apiLogin, apiRegister, apiGetProfile, logout } from "../auth.js";
 import { log } from "./logging.js";
+import { renderShopHeader } from "./results.js";
 
-export async function initAuth() {
-    // 1. Event Listeners (Attach immediately)
+export function updateAuthUi() {
     const authBtn = document.getElementById('authBtn');
-    if (authBtn) {
-        authBtn.addEventListener('click', () => {
-            if (state.user.token) {
-                // If logged in, open Profile Modal
-                openProfileModal();
-            } else {
-                openAuthModal();
-            }
-        });
-    }
+    const userDisplay = document.getElementById('userDisplay');
+    const adminBtn = document.getElementById('adminBtn');
+    // Можно добавить новые элементы, если переходите на новую структуру
 
-    const currencyBtn = document.getElementById('currencyBtn');
-    if (currencyBtn) {
-        currencyBtn.addEventListener('click', () => {
-            openCurrencyModal();
-        });
-    }
-
-    // Modal tabs
-    document.getElementById('tabLogin')?.addEventListener('click', () => switchAuthTab('login'));
-    document.getElementById('tabRegister')?.addEventListener('click', () => switchAuthTab('register'));
-
-    // Currency Modal Tabs
-    document.getElementById('tabSendGP')?.addEventListener('click', () => switchCurrencyTab('send'));
-    document.getElementById('tabBuyGP')?.addEventListener('click', () => switchCurrencyTab('buy'));
-
-    // Forms
-    document.getElementById('doLoginBtn')?.addEventListener('click', handleLoginSubmit);
-    document.getElementById('doRegisterBtn')?.addEventListener('click', handleRegisterSubmit);
-    
-    // Auth Close
-    document.getElementById('authClose')?.addEventListener('click', closeAuthModal);
-    
-    // Profile Modal
-    document.getElementById('profileClose')?.addEventListener('click', closeProfileModal);
-    document.getElementById('doLogoutBtn')?.addEventListener('click', async () => {
-        await logout();
-        updateAuthUI();
-        closeProfileModal();
-        log("Logged out.");
-    });
-    
-    // Currency Close & Actions
-    document.getElementById('currencyClose')?.addEventListener('click', closeCurrencyModal);
-    document.getElementById('doSendBtn')?.addEventListener('click', () => {
-        const recip = (document.getElementById('sendRecipient') as HTMLInputElement).value;
-        const amt = (document.getElementById('sendAmount') as HTMLInputElement).value;
-        if(recip && amt) {
-            alert(`Sending ${amt} GP to ${recip}... (Feature Pending Backend)`);
-            closeCurrencyModal();
-        } else {
-            alert("Please fill in all fields.");
+    if (state.user.token) {
+        if (authBtn) authBtn.textContent = `Logout (${state.user.username || 'User'})`;
+        if (userDisplay) userDisplay.textContent = state.user.username || "User";
+        if (adminBtn) {
+            if (state.user.role === 'admin') adminBtn.classList.remove('hidden');
+            else adminBtn.classList.add('hidden');
         }
-    });
-    document.getElementById('doBuyBtn')?.addEventListener('click', () => {
-        const amt = (document.getElementById('buyAmount') as HTMLInputElement).value;
-        if(amt) {
-             alert(`Purchasing ${amt} GP... (Feature Pending Backend)`);
-             closeCurrencyModal();
-        }
-    });
-
-    // 2. Check local storage
-    const storedToken = localStorage.getItem('shopgen_token');
-    if (storedToken) {
-        // Verify and get profile
-        await refreshProfile(storedToken);
+    } else {
+        if (authBtn) authBtn.textContent = "Login / Register";
+        if (userDisplay) userDisplay.textContent = "Guest";
+        if (adminBtn) adminBtn.classList.add('hidden');
     }
-    updateAuthUI();
+    renderShopHeader();
 }
 
 function openAuthModal() {
@@ -82,14 +30,6 @@ function openAuthModal() {
     if (modal && overlay) {
         modal.classList.remove('hidden');
         overlay.style.display = 'flex';
-        // Clear inputs
-        (document.getElementById('loginEmail') as HTMLInputElement).value = '';
-        (document.getElementById('loginPass') as HTMLInputElement).value = '';
-        (document.getElementById('regUser') as HTMLInputElement).value = '';
-        (document.getElementById('regEmail') as HTMLInputElement).value = '';
-        (document.getElementById('regPass') as HTMLInputElement).value = '';
-        authStatus("");
-        switchAuthTab('login');
     }
 }
 
@@ -100,17 +40,6 @@ function closeAuthModal() {
     if (overlay) overlay.style.display = 'none';
 }
 
-function openProfileModal() {
-    const modal = document.getElementById('userProfileModal');
-    const overlay = document.getElementById('modalOverlay');
-    const nameEl = document.getElementById('profileName');
-    
-    if (modal && overlay) {
-        modal.classList.remove('hidden');
-        overlay.style.display = 'flex';
-        if (nameEl) nameEl.textContent = state.user.username || "User";
-    }
-}
 
 function closeProfileModal() {
     const modal = document.getElementById('userProfileModal');
@@ -119,48 +48,12 @@ function closeProfileModal() {
     if (overlay) overlay.style.display = 'none';
 }
 
-function openCurrencyModal() {
-    const modal = document.getElementById('currencyModal');
-    const overlay = document.getElementById('modalOverlay');
-    if (modal && overlay) {
-        modal.classList.remove('hidden');
-        overlay.style.display = 'flex';
-        switchCurrencyTab('send');
-    }
-}
-
-function closeCurrencyModal() {
-    const modal = document.getElementById('currencyModal');
-    const overlay = document.getElementById('modalOverlay');
-    if (modal) modal.classList.add('hidden');
-    if (overlay) overlay.style.display = 'none';
-}
-
-function switchCurrencyTab(tab: 'send' | 'buy') {
-    const tSend = document.getElementById('tabSendGP');
-    const tBuy = document.getElementById('tabBuyGP');
-    const vSend = document.getElementById('viewSendGP');
-    const vBuy = document.getElementById('viewBuyGP');
-    
-    if (tab === 'send') {
-        tSend?.classList.add('active');
-        tBuy?.classList.remove('active');
-        vSend?.classList.remove('hidden');
-        vBuy?.classList.add('hidden');
-    } else {
-        tSend?.classList.remove('active');
-        tBuy?.classList.add('active');
-        vSend?.classList.add('hidden');
-        vBuy?.classList.remove('hidden');
-    }
-}
-
 function switchAuthTab(tab: 'login' | 'register') {
     const tLog = document.getElementById('tabLogin');
     const tReg = document.getElementById('tabRegister');
     const vLog = document.getElementById('viewLogin');
     const vReg = document.getElementById('viewRegister');
-    
+
     if (tab === 'login') {
         tLog?.classList.add('active');
         tReg?.classList.remove('active');
@@ -186,11 +79,14 @@ function authStatus(msg: string, type: 'error' | 'success' = 'error') {
 
 async function handleLoginSubmit() {
     const btn = document.getElementById('doLoginBtn') as HTMLButtonElement;
-    const email = (document.getElementById('loginEmail') as HTMLInputElement).value.trim();
-    const p = (document.getElementById('loginPass') as HTMLInputElement).value.trim();
-    
-    if (!email || !p) {
-        authStatus("Email and password required.");
+    const loginInput = document.getElementById('loginUser') as HTMLInputElement;
+    const passInput = document.getElementById('loginPass') as HTMLInputElement;
+
+    const login = loginInput.value.trim();
+    const p = passInput.value.trim();
+
+    if (!login || !p) {
+        authStatus("Username and password required.");
         return;
     }
 
@@ -201,16 +97,17 @@ async function handleLoginSubmit() {
     authStatus("");
 
     try {
-        const res = await apiLogin(email, p);
+        const res = await apiLogin(login, p);
         if (res.success && res.token) {
             state.user.token = res.token;
-            state.user.username = email.split('@')[0]; // Temporary display name until profile fetch
+            state.user.username = login;
             localStorage.setItem('shopgen_token', res.token);
-            
+            if (res.refreshToken) localStorage.setItem('shopgen_refresh_token', res.refreshToken);
+
             authStatus("Login successful!", "success");
             await refreshProfile(res.token);
             setTimeout(closeAuthModal, 800);
-            updateAuthUI();
+            updateAuthUi();
             log(`Logged in as ${state.user.username}`);
         } else {
             authStatus(res.error || "Login failed.");
@@ -227,9 +124,13 @@ async function handleLoginSubmit() {
 
 async function handleRegisterSubmit() {
     const btn = document.getElementById('doRegisterBtn') as HTMLButtonElement;
-    const u = (document.getElementById('regUser') as HTMLInputElement).value.trim();
-    const email = (document.getElementById('regEmail') as HTMLInputElement).value.trim();
-    const p = (document.getElementById('regPass') as HTMLInputElement).value.trim();
+    const uInput = document.getElementById('regUser') as HTMLInputElement;
+    const eInput = document.getElementById('regEmail') as HTMLInputElement;
+    const pInput = document.getElementById('regPass') as HTMLInputElement;
+
+    const u = uInput.value.trim();
+    const email = eInput.value.trim();
+    const p = pInput.value.trim();
 
     if (!u || !email || !p) {
         authStatus("Username, email and password required.");
@@ -247,9 +148,9 @@ async function handleRegisterSubmit() {
         if (res.success) {
             authStatus(res.message || "Registration successful! Please login.", "success");
             // Clear inputs
-            (document.getElementById('regUser') as HTMLInputElement).value = '';
-            (document.getElementById('regEmail') as HTMLInputElement).value = '';
-            (document.getElementById('regPass') as HTMLInputElement).value = '';
+            uInput.value = '';
+            eInput.value = '';
+            pInput.value = '';
             setTimeout(() => switchAuthTab('login'), 1500);
         } else {
             authStatus(res.error || "Registration failed.");
@@ -265,59 +166,116 @@ async function handleRegisterSubmit() {
 }
 
 export async function refreshProfile(token: string) {
-    const res = await apiGetBalance(token);
+    const res = await apiGetProfile(token);
+
+    // Accept if API call succeeded or if fallback (404) happened but token exists
     if (res.success) {
         state.user.token = token;
-        // Spec for GET /balance only returns { balance: ... }. 
-        // We might need another call for username, or decode JWT.
-        // For now, let's keep the existing logic or fall back to a placeholder if username isn't in response.
-        // But if the previous API returned username and new one doesn't, we need to handle that.
-        // Assuming /balance just returns balance.
-        state.user.balance = res.balance || 0;
-        
-        // Try to keep username if we have it, or maybe encoded in token?
-        // Ideally we'd decode the JWT to get the username/sub claim.
-        if (!state.user.username) {
-             // Simple fallback decode
-             try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                state.user.username = payload.sub || payload.username || "User";
-             } catch(e) {
-                state.user.username = "User";
-             }
+
+        // Decode JWT to get username
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            // New API uses 'login' field for username
+            state.user.username = payload.login || payload.sub || "User";
+        } catch (e) {
+            state.user.username = "User";
+        }
+
+        // Update balance if available, else 0
+        state.user.balance = (res.user && res.user.balance) ? res.user.balance : 0;
+
+        // Update Role
+        state.user.role = res.role || null;
+        if (state.user.role === 'admin') {
+            localStorage.setItem('shopgen_role', 'admin');
+        }
+
+        // Handle Admin Button
+        const adminBtn = document.getElementById('adminUsersBtn');
+        if (adminBtn) {
+            if (state.user.role === 'admin') {
+                adminBtn.classList.remove('hidden');
+            } else {
+                adminBtn.classList.add('hidden');
+            }
         }
     } else {
         // Token expired or invalid
         await logout();
         log("Session expired.", "warn");
     }
-    updateAuthUI();
+    updateAuthUi();
 }
 
-export function updateAuthUI() {
-    const btn = document.getElementById('authBtn');
-    const curBtn = document.getElementById('currencyBtn');
 
-    if (state.user.token) {
-        // Logged In
-        if (btn) {
-            btn.textContent = state.user.username || "User";
-            btn.title = "Open Profile";
-            btn.classList.add('status-loaded');
-        }
-        if (curBtn) {
-            curBtn.textContent = `${state.user.balance} GP`;
-            curBtn.classList.remove('hidden');
-        }
-    } else {
-        // Logged Out
-        if (btn) {
-            btn.textContent = "Login / Register";
-            btn.title = "Login to save account data";
-            btn.classList.remove('status-loaded');
-        }
-        if (curBtn) {
-            curBtn.classList.add('hidden');
-        }
+export function initAuth() {
+    updateAuthUi();
+    // Check for existing token
+    const savedToken = localStorage.getItem('shopgen_token');
+    const savedUser = localStorage.getItem('shopgen_user');
+    const savedRole = localStorage.getItem('shopgen_role');
+    if (savedToken) {
+        state.user.token = savedToken;
+        state.user.username = savedUser;
+        state.user.role = savedRole;
+        updateAuthUi();
     }
+
+    const authBtn = document.getElementById('authBtn');
+    if (authBtn) {
+        authBtn.addEventListener('click', async () => {
+            if (state.user.token) {
+                // Already logged in -> Logout
+                await logout();
+                updateAuthUi();
+                log("Logged out.");
+            } else {
+                // Open Auth Modal
+                openAuthModal();
+            }
+        });
+    }
+
+    // Attach basic login handler for the modal
+    const loginBtn = document.getElementById('doLoginBtn');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', handleLoginSubmit);
+    }
+
 }
+
+const regBtn = document.getElementById('doRegisterBtn');
+if (regBtn) {
+    regBtn.addEventListener('click', handleRegisterSubmit);
+}
+
+// Enter key support
+['loginUser', 'loginPass'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keypress', (e: KeyboardEvent) => {
+        if (e.key === 'Enter') handleLoginSubmit();
+    });
+});
+
+['regUser', 'regEmail', 'regPass'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('keypress', (e: KeyboardEvent) => {
+        if (e.key === 'Enter') handleRegisterSubmit();
+    });
+});
+
+// Tab switching
+const tabLogin = document.getElementById('tabLogin');
+const tabRegister = document.getElementById('tabRegister');
+const viewLogin = document.getElementById('viewLogin');
+const viewRegister = document.getElementById('viewRegister');
+
+if (tabLogin && tabRegister && viewLogin && viewRegister) {
+    tabLogin.addEventListener('click', () => {
+        switchAuthTab('login');
+    });
+    tabRegister.addEventListener('click', () => {
+        switchAuthTab('register');
+    });
+}
+

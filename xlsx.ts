@@ -1,4 +1,3 @@
-
 import { state } from "./state.js";
 import { log } from "./ui.js";
 import { parseNum, formatLabel } from "./utils.js";
@@ -36,58 +35,6 @@ function processTagsIndex() {
     }
 }
 
-export async function processXLSX(file: File) {
-    return new Promise<void>((resolve, reject) => {
-        const isJson = file.name.toLowerCase().endsWith('.json');
-        const reader = new FileReader();
-        
-        reader.onload = (e) => {
-            try {
-                let data: Record<string, any[]> = {};
-                if (isJson) {
-                    const text = e.target?.result as string;
-                    data = JSON.parse(text);
-                } else {
-                    const workbook = (window as any).XLSX.read(new Uint8Array(e.target?.result as ArrayBuffer), { type: 'array' });
-                    workbook.SheetNames.forEach((n: string) => {
-                        data[n] = (window as any).XLSX.utils.sheet_to_json(workbook.Sheets[n]);
-                    });
-                }
-                
-                // If the user uploads a file, we treat it as the primary DB.
-                // If it contains SRD items, we also update the SRD DB to allow the upload to override it.
-                setDb(data);
-                if (data.SRD_ITEMS && data.SRD_ITEMS.length > 0) {
-                    state.srdDb = data;
-                }
-
-                state.lastFilename = file.name;
-                processTagsIndex();
-                
-                const status = document.getElementById('fileStatus');
-                if (status) {
-                    status.textContent = `Loaded: ${file.name}`;
-                    status.className = "status-badge status-loaded";
-                }
-                const genBtn = document.getElementById('generateBtn') as HTMLButtonElement;
-                if (genBtn) genBtn.disabled = false;
-
-                log(`Data Loaded: ${file.name}`, 'info');
-                resolve();
-            } catch (err) {
-                log(`Failed to load data: ${err}`, 'error');
-                reject(err);
-            }
-        };
-
-        if (isJson) {
-            reader.readAsText(file);
-        } else {
-            reader.readAsArrayBuffer(file);
-        }
-    });
-}
-
 export async function loadDefaultData() {
     try {
         const p1 = fetch('./HBgen/Table.Json').then(r => r.json());
@@ -107,7 +54,7 @@ export async function loadDefaultData() {
         
         const status = document.getElementById('fileStatus');
         if (status) {
-            status.textContent = "Loaded: Defaults";
+            status.textContent = "Data Loaded";
             status.className = "status-badge status-loaded";
         }
         const genBtn = document.getElementById('generateBtn') as HTMLButtonElement;

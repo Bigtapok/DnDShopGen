@@ -1,1088 +1,32 @@
-<!DOCTYPE html>
+      <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>D&D ShopGen</title>
-    <style>
-        :root {
-            /* Modern Dark Blue Palette */
-            --bg: #0f172a; /* Slate 900 */
-            --bg-panel: #1e293b; /* Slate 800 */
-            --bg-card: #334155; /* Slate 700 */
-            --bg-input: #1e293b;
-            --border: #475569; /* Slate 600 */
-
-            --primary: #6366f1; /* Indigo 500 */
-            --primary-hover: #4f46e5; /* Indigo 600 */
-            --accent: #8b5cf6; /* Violet 500 */
-
-            --text-main: #f8fafc; /* Slate 50 */
-            --text-muted: #94a3b8; /* Slate 400 */
-
-            --success: #10b981; /* Emerald 500 */
-            --danger: #ef4444; /* Red 500 */
-            --warning: #f59e0b; /* Amber 500 */
-
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            --radius-sm: 6px;
-            --radius-md: 8px;
-            --radius-lg: 12px;
-            /* Rarity Colors - slightly muted for dark mode */
-            --rarity-common: #94a3b8;
-            --rarity-uncommon: #10b981;
-            --rarity-rare: #3b82f6;
-            --rarity-very-rare: #a855f7;
-            --rarity-legendary: #eab308;
-        }
-
-        [data-theme="light"] {
-            --bg: #f1f5f9; /* Slate 100 */
-            --bg-panel: #ffffff; /* White */
-            --bg-card: #ffffff; /* White */
-            --bg-input: #f8fafc; /* Slate 50 */
-            --border: #cbd5e1; /* Slate 300 */
-
-            --text-main: #0f172a; /* Slate 900 */
-            --text-muted: #64748b; /* Slate 500 */
-
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.05);
-            /* Rarity Colors - slightly darker for light mode contrast */
-            --rarity-common: #64748b;
-            --rarity-uncommon: #059669;
-            --rarity-rare: #2563eb;
-            --rarity-very-rare: #9333ea;
-            --rarity-legendary: #ca8a04;
-        }
-
-        /* Reset & Base */
-        * {
-            box-sizing: border-box;
-            outline: none;
-        }
-
-        body {
-            margin: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text-main);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-
-        /* Scrollbars */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 4px;
-        }
-
-            ::-webkit-scrollbar-thumb:hover {
-                background: var(--text-muted);
-            }
-
-        /* Header */
-        header {
-            background: var(--bg-panel);
-            border-bottom: 1px solid var(--border);
-            padding: 0.75rem 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-            box-shadow: var(--shadow);
-            z-index: 10;
-        }
-
-        .app-title {
-            font-weight: 700;
-            font-size: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--text-main);
-            letter-spacing: -0.025em;
-        }
-
-        .version-badge {
-            font-size: 0.7rem;
-            background: var(--primary);
-            color: white;
-            padding: 2px 6px;
-            border-radius: 12px;
-            font-weight: 600;
-        }
-
-        .spacer {
-            flex: 1;
-        }
-
-        .controls-group {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        /* Inputs */
-        input[type="text"], input[type="number"], input[type="password"], select, textarea {
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 0.5rem 0.75rem;
-            border-radius: var(--radius-sm);
-            font-size: 0.9rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-            input:focus, select:focus, textarea:focus {
-                border-color: var(--primary);
-                box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-            }
-
-        /* Modern Select Overrides */
-        select {
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-            background-position: right 0.7rem center;
-            background-repeat: no-repeat;
-            background-size: 1rem;
-            padding-right: 2.5rem !important;
-            cursor: pointer;
-        }
-
-        #tagDropdown {
-            background-color: var(--bg-card);
-            border-width: 1px;
-            font-weight: 600;
-            letter-spacing: 0.01em;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            min-width: 200px;
-        }
-
-            #tagDropdown:hover {
-                border-color: var(--primary);
-                background-color: var(--bg-panel);
-                transform: translateY(-1px);
-                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-            }
-
-            #tagDropdown option {
-                background-color: var(--bg-panel);
-                color: var(--text-main);
-                padding: 8px;
-            }
-
-        /* Buttons */
-        button {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 0.5rem 1rem;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-            button:hover {
-                background: var(--border);
-                transform: translateY(-1px);
-            }
-
-            button:active {
-                transform: translateY(0);
-            }
-
-            button:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-                transform: none;
-            }
-
-            button.primary {
-                background: var(--primary);
-                border-color: var(--primary);
-                color: white;
-                box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);
-            }
-
-                button.primary:hover {
-                    background: var(--primary-hover);
-                    border-color: var(--primary-hover);
-                    box-shadow: 0 4px 6px rgba(99, 102, 241, 0.4);
-                }
-
-        /* Switches (Modern Checkboxes) */
-        .settings-toggles {
-            display: flex;
-            align-items: center;
-            gap: 1.25rem;
-            padding: 0 1rem;
-            border-left: 1px solid var(--border);
-            border-right: 1px solid var(--border);
-            height: 28px;
-            margin: 0 0.5rem;
-        }
-
-        .switch-label {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            transition: color 0.2s;
-        }
-
-            .switch-label:hover {
-                color: var(--text-main);
-            }
-
-        .switch-input {
-            appearance: none;
-            width: 32px;
-            height: 18px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            flex-shrink: 0;
-        }
-
-            .switch-input::after {
-                content: '';
-                position: absolute;
-                top: 2px;
-                left: 2px;
-                width: 12px;
-                height: 12px;
-                background: var(--text-muted);
-                border-radius: 50%;
-                transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-                box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-            }
-
-            .switch-input:checked {
-                background: var(--primary);
-                border-color: var(--primary);
-            }
-
-                .switch-input:checked::after {
-                    transform: translateX(14px);
-                    background: white;
-                }
-
-            .switch-input:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
-                filter: grayscale(100%);
-            }
-
-        .switch-label:has(.switch-input:disabled) {
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-
-        /* Workspace */
-        .workspace {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-        }
-
-        /* Mode Tabs */
-        .mode-tabs {
-            display: flex;
-            background: var(--bg-panel);
-            border-bottom: 1px solid var(--border);
-            padding: 0 1rem;
-            gap: 2px;
-        }
-
-        .mode-tab {
-            background: transparent;
-            border: none;
-            border-bottom: 2px solid transparent;
-            padding: 0.75rem 1.5rem;
-            border-radius: 4px 4px 0 0;
-            opacity: 0.6;
-            color: var(--text-main);
-            font-weight: 500;
-            transition: all 0.2s;
-            margin-bottom: -1px;
-        }
-
-            .mode-tab:hover {
-                opacity: 0.8;
-                background: rgba(255,255,255,0.03);
-            }
-
-        [data-theme="light"] .mode-tab:hover {
-            background: rgba(0,0,0,0.03);
-        }
-
-        .mode-tab.active {
-            opacity: 1;
-            border-bottom-color: var(--primary);
-            color: var(--primary);
-            background: transparent;
-        }
-
-        /* Prompt Panel */
-        .prompt-panel {
-            background: var(--bg-panel);
-            border-bottom: 1px solid var(--border);
-            padding: 1.5rem;
-            overflow-y: auto;
-            max-height: 50vh;
-            flex-shrink: 0;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-sm);
-        }
-
-            .prompt-panel.hidden {
-                display: none;
-            }
-
-        .input-mode-toggle {
-            margin-bottom: 1.5rem;
-            display: flex;
-            gap: 0.5rem;
-            background: var(--bg);
-            padding: 4px;
-            border-radius: var(--radius-md);
-            width: fit-content;
-            border: 1px solid var(--border);
-        }
-
-            .input-mode-toggle button {
-                background: transparent;
-                border: none;
-                color: var(--text-muted);
-                padding: 0.4rem 1rem;
-                border-radius: var(--radius-sm);
-                box-shadow: none;
-                font-size: 0.8rem;
-            }
-
-                .input-mode-toggle button.active {
-                    background: var(--bg-card);
-                    color: var(--text-main);
-                    box-shadow: var(--shadow-sm);
-                }
-
-        .builder-row {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
-            align-items: center;
-            background: var(--bg);
-            padding: 0.5rem;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border);
-            transition: border-color 0.2s;
-        }
-
-            .builder-row:hover {
-                border-color: var(--text-muted);
-            }
-
-            .builder-row input.qty-in {
-                width: 70px;
-                text-align: center;
-            }
-
-            .builder-row .query-in {
-                flex: 1;
-            }
-
-            .builder-row .rarity-sel {
-                width: 140px;
-            }
-
-        .btn-icon {
-            padding: 0.4rem;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            color: var(--text-muted);
-            border: none;
-            background: transparent;
-        }
-
-            .btn-icon:hover {
-                background: rgba(239, 68, 68, 0.1);
-                color: var(--danger);
-            }
-
-        #textModePanel textarea {
-            width: 100%;
-            height: 100px;
-            resize: vertical;
-            margin-bottom: 0.75rem;
-            font-family: inherit;
-        }
-
-        .generate-bar {
-            margin-top: 1.5rem;
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border);
-        }
-
-        #generateBtn {
-            flex: 1;
-            padding: 0.75rem;
-            font-size: 1rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        /* Results Area */
-        .results-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            padding: 1.5rem;
-            background: var(--bg);
-        }
-
-        /* Shop Header */
-        .shop-header {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 1.25rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            text-align: center;
-            box-shadow: var(--shadow);
-        }
-
-        .shop-title {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--primary);
-            letter-spacing: -0.02em;
-            line-height: 1.1;
-            margin: 0;
-        }
-
-        .shop-subtitle {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .merchant-info {
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            color: var(--text-main);
-            margin-top: 0.25rem;
-        }
-
-        .merchant-trait {
-            font-style: italic;
-            opacity: 0.7;
-        }
-
-        .quick-controls {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-            background: var(--bg-panel);
-            padding: 0.75rem;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border);
-        }
-
-        .filter-chips {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .filter-chip {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            border: 1px solid var(--border);
-            opacity: 0.6;
-            transition: all 0.2s;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.02em;
-            color: var(--text-muted);
-        }
-
-            .filter-chip:hover {
-                opacity: 0.8;
-                transform: translateY(-1px);
-            }
-
-            .filter-chip.active {
-                opacity: 1;
-                border-color: currentColor;
-                box-shadow: 0 0 8px rgba(0,0,0,0.2);
-            }
-
-        .rarity-common {
-            color: var(--rarity-common);
-            border-color: var(--rarity-common);
-        }
-
-        .rarity-uncommon {
-            color: var(--rarity-uncommon);
-            border-color: var(--rarity-uncommon);
-        }
-
-        .rarity-rare {
-            color: var(--rarity-rare);
-            border-color: var(--rarity-rare);
-        }
-
-        .rarity-very_rare {
-            color: var(--rarity-very-rare);
-            border-color: var(--rarity-very-rare);
-        }
-
-        .rarity-legendary {
-            color: var(--rarity-legendary);
-            border-color: var(--rarity-legendary);
-        }
-
-        .results-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 1.25rem;
-            overflow-y: auto;
-            padding-bottom: 2rem;
-            padding-right: 0.5rem;
-        }
-
-        .item-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 1.25rem;
-            cursor: pointer;
-            transition: all 0.2s ease-out;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            box-shadow: var(--shadow-sm);
-            position: relative;
-            overflow: hidden;
-            min-height: 240px;
-        }
-
-            .item-card:hover {
-                transform: translateY(-4px);
-                border-color: var(--primary);
-                box-shadow: var(--shadow-lg);
-                background: var(--bg-panel);
-            }
-
-            .item-card::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 4px;
-                height: 100%;
-                background: var(--border);
-                opacity: 0.5;
-                transition: background 0.2s;
-            }
-
-            .item-card:hover::before {
-                background: var(--primary);
-                opacity: 1;
-            }
-
-            .item-card .badge {
-                display: inline-block;
-                padding: 4px 8px;
-                border-radius: 4px;
-                font-size: 0.65rem;
-                font-weight: 700;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                align-self: flex-start;
-                background: rgba(0,0,0,0.1);
-                border: 1px solid currentColor;
-                margin-bottom: 0.25rem;
-            }
-
-        .item-name {
-            font-weight: 700;
-            font-size: 1.15rem;
-            color: var(--text-main);
-            line-height: 1.3;
-        }
-
-        .item-damage {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-        }
-
-        .item-price {
-            color: var(--warning);
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
-
-        .item-desc {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            display: -webkit-box;
-            -webkit-line-clamp: 6;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-height: 1.5;
-            margin-top: 0.25rem;
-        }
-
-        /* Empty State */
-        .empty-state {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            color: var(--text-muted);
-            opacity: 0.5;
-        }
-
-        /* Footer / Logs */
-        .pipeline-logs {
-            height: 180px;
-            background: #0b1120; /* Very dark slate */
-            border-top: 1px solid var(--border);
-            padding: 1rem;
-            font-family: 'Consolas', monospace;
-            font-size: 0.8rem;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            color: #cbd5e1;
-        }
-
-        .log-header {
-            position: sticky;
-            top: -1rem;
-            background: #0b1120;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid #1e293b;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-            z-index: 5;
-        }
-
-        .log-entry {
-            margin-bottom: 4px;
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .log-time {
-            color: var(--text-muted);
-        }
-
-        .log-badge {
-            padding: 1px 4px;
-            border-radius: 2px;
-            font-weight: bold;
-            font-size: 0.7rem;
-        }
-
-        .badge-info {
-            background: #2563eb;
-            color: white;
-        }
-
-        .badge-error {
-            background: #dc2626;
-            color: white;
-        }
-
-        .badge-warn {
-            background: #d97706;
-            color: black;
-        }
-
-        /* Modal */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal {
-            background: var(--bg-panel);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-lg);
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            color: var(--text-main);
-        }
-
-        .modal-header {
-            padding: 1.25rem;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-body {
-            padding: 1.25rem;
-            overflow-y: auto;
-        }
-
-        .modal-footer {
-            padding: 1.25rem;
-            border-top: 1px solid var(--border);
-            text-align: right;
-            background: rgba(0,0,0,0.1);
-        }
-
-        .modal-tabs {
-            display: flex;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 1rem;
-        }
-
-        .modal-tab {
-            padding: 0.75rem 1.25rem;
-            cursor: pointer;
-            opacity: 0.7;
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s;
-        }
-
-            .modal-tab:hover {
-                opacity: 1;
-                background: rgba(255,255,255,0.03);
-            }
-
-        [data-theme="light"] .modal-tab:hover {
-            background: rgba(0,0,0,0.03);
-        }
-
-        .modal-tab.active {
-            opacity: 1;
-            border-bottom-color: var(--primary);
-            color: var(--primary);
-        }
-
-        .modal-image-container {
-            text-align: center;
-            margin-bottom: 1rem;
-            min-height: 100px;
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .modal-image {
-            max-width: 100%;
-            max-height: 300px;
-            object-fit: contain;
-        }
-
-        .spinner {
-            width: 30px;
-            height: 30px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: var(--primary);
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .tag-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.3rem;
-            background: rgba(255,255,255,0.1);
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-        }
-
-        [data-theme="light"] .tag-chip {
-            background: rgba(0,0,0,0.05);
-        }
-
-        .tag-chip-remove {
-            cursor: pointer;
-            opacity: 0.7;
-        }
-
-            .tag-chip-remove:hover {
-                opacity: 1;
-                color: var(--danger);
-            }
-
-        /* Hidden Utility */
-        .hidden {
-            display: none !important;
-        }
-
-        .status-badge {
-            font-size: 0.75rem;
-            padding: 4px 8px;
-            border-radius: 12px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            font-weight: 500;
-        }
-
-        .status-loaded {
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--success);
-            border-color: rgba(16, 185, 129, 0.3);
-        }
-
-        /* Shop Config Grid */
-        .shop-config-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-
-            .shop-config-grid select {
-                width: 100%;
-                font-size: 0.8rem;
-                padding: 4px;
-            }
-
-        .shop-config-full {
-            grid-column: span 3;
-        }
-
-        /* Modal SRD Stats Box */
-        .srd-stats-box {
-            background-color: rgba(0, 0, 0, 0.25);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        [data-theme="light"] .srd-stats-box {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-
-        .srd-stat-row {
-            display: grid;
-            grid-template-columns: 120px 1fr;
-            gap: 1rem;
-            align-items: baseline;
-            font-size: 0.9rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        [data-theme="light"] .srd-stat-row {
-            border-bottom-color: rgba(0, 0, 0, 0.05);
-        }
-
-        .srd-stat-row:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .srd-stat-row .label {
-            color: var(--text-muted);
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-        }
-
-        .srd-stat-row .value {
-            color: var(--text-main);
-            line-height: 1.4;
-        }
-
-        /* Modal Damage Breakdown (Generator) */
-        .dmg-breakdown {
-            background: rgba(0, 0, 0, 0.25);
-            padding: 1rem;
-            border-radius: var(--radius-md);
-            margin-bottom: 1rem;
-            border: 1px solid var(--border);
-        }
-
-        [data-theme="light"] .dmg-breakdown {
-            background: rgba(0, 0, 0, 0.05);
-        }
-
-        .dmg-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 6px;
-            font-size: 0.9rem;
-        }
-
-        .dmg-total {
-            border-top: 1px solid var(--border);
-            margin-top: 8px;
-            padding-top: 8px;
-            font-weight: 700;
-            color: var(--text-main);
-        }
-
-        .dmg-row.excluded {
-            opacity: 0.5;
-            text-decoration: line-through;
-        }
-
-        /* SRD Tables */
-        .srd-table-container {
-            margin: 1rem 0;
-            overflow-x: auto;
-            border-radius: var(--radius-sm);
-            background: rgba(0,0,0,0.2);
-            border: 1px solid var(--border);
-        }
-
-            .srd-table-container h5 {
-                margin: 0;
-                padding: 0.5rem 0.75rem;
-                background: rgba(255,255,255,0.05);
-                font-size: 0.85rem;
-                color: var(--primary);
-                border-bottom: 1px solid var(--border);
-            }
-
-            .srd-table-container table {
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 0.85rem;
-            }
-
-            .srd-table-container th, .srd-table-container td {
-                padding: 0.4rem 0.75rem;
-                text-align: left;
-                border-bottom: 1px solid rgba(255,255,255,0.05);
-            }
-
-            .srd-table-container th {
-                color: var(--text-muted);
-                font-weight: 600;
-                font-size: 0.75rem;
-                text-transform: uppercase;
-            }
-
-            .srd-table-container tr:last-child td {
-                border-bottom: none;
-            }
-
-            .srd-table-container tr:hover td {
-                background: rgba(255,255,255,0.02);
-            }
-    </style>
 <link rel="stylesheet" href="/index.css">
 </head>
 <body>
-
 <script type="importmap">
 {
   "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.39.0"
+    "@google/genai": "https://esm.sh/@google/genai@^1.40.0"
   }
 }
 </script>
- <script type="module" src="./index.tsx"></script>
+<script type="module" src="./index.tsx"></script>
 
     <header>
-        <div class="app-title">D&D ShopGen <span class="version-badge">v3.5.6</span></div>
+        <div class="app-title">D&D ShopGen <span class="version-badge">v3.6</span></div>
+
         <div class="controls-group">
-            <input type="file" id="xlsxInput" accept=".xlsx,.json" style="display:none">
-            <button id="uploadBtn" class="primary">Upload Data (XLSX/JSON)</button>
             <span id="fileStatus" class="status-badge">No Data</span>
+            <button id="adminUsersBtn" class="hidden" style="margin-left:0.5rem; font-size:0.75rem; padding:4px 8px; background:var(--accent); color:white; border:none; border-radius:4px; cursor:pointer;">Users</button>
         </div>
         <div class="spacer"></div>
         <div class="controls-group">
-            <button id="currencyBtn" class="hidden" style="margin-right:0.5rem; background:rgba(255,215,0,0.1); color:#ffd700; border-color:rgba(255,215,0,0.3);">0 GP</button>
             <button id="authBtn">Login / Register</button>
-            <button id="aboutBtn" onclick="document.getElementById('aboutModal').classList.remove('hidden');document.getElementById('modalOverlay').style.display='flex'">About</button>
+            <button id="aboutBtn">About</button> 
 
             <div class="settings-toggles">
                 <label class="switch-label">
@@ -1094,19 +38,15 @@
                     <input type="checkbox" id="debugToggle" class="switch-input" checked>
                 </label>
                 <label class="switch-label">
-                    <span>Images</span>
-                    <input type="checkbox" id="imagesToggle" class="switch-input">
-                </label>
-                <label class="switch-label">
                     <span>INT</span>
                     <input type="checkbox" id="internalsToggle" class="switch-input">
                 </label>
             </div>
 
             <input type="text" id="seedInput" placeholder="SEED" style="width:80px; text-transform:uppercase;">
-            <button id="exportJsonBtn" onclick="window.downloadJson(state.generatedItems, '3.5.6', false)">Export JSON</button>
-            <button id="exportFullBtn" onclick="window.downloadJson(state.generatedItems, '3.5.6', true)">Full JSON</button>
-            <button id="copyMdBtn" onclick="window.copyMarkdown(state.generatedItems, '3.5.6')">Copy MD</button>
+            <button id="exportJsonBtn">Export JSON</button>
+            <button id="exportFullBtn">Full JSON</button>
+            <button id="copyMdBtn">Copy MD</button>
             <button id="clearBtn">Clear</button>
         </div>
     </header>
@@ -1163,6 +103,14 @@
                 <div id="tagOptionsList" style="display:none; max-height:200px; overflow-y:auto; border:1px solid var(--border); background:var(--bg-card); padding:0.5rem;"></div>
             </div>
 
+            <!-- Saved Shops Panel -->
+            <div id="savedShopsPanel" class="hidden">
+                <div id="savedShopsList" style="display:grid; gap:0.5rem;">
+                    <!-- Populated by JS -->
+                    <div style="padding:1rem; text-align:center; color:var(--text-muted);">Loading...</div>
+                </div>
+            </div>
+
             <!-- Builder Panel -->
             <div id="builderModePanel">
                 <div id="builderRows"></div>
@@ -1212,28 +160,30 @@
                 <div id="rarityFilters" style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; border-top:1px solid var(--border); padding-top:0.5rem;">
                     <!-- Populated by JS -->
                 </div>
+            </div>
 
-                <div id="resultsGrid" class="results-grid hidden"></div>
+            <div id="resultsGrid" class="results-grid hidden"></div>
 
-                <div id="emptyState" class="empty-state">
-                    <div style="font-size:3rem; margin-bottom:1rem;">⚔️</div>
-                    <p>Upload a Constitution XLSX or DB JSON to start.</p>
-                    <p style="font-size:0.9rem">Supports Generator & SRD modes.</p>
-                </div>
+            <div id="emptyState" class="empty-state">
+                <div style="font-size:3rem; margin-bottom:1rem;">⚔️</div>
+                <p>Load default data to start.</p>
+                <p style="font-size:0.9rem">Supports Generator & SRD modes.</p>
             </div>
         </div>
 
-        <div class="pipeline-logs">
-            <div class="log-header">
-                <strong>PIPELINE LOGS</strong>
-                <a href="#" onclick="window.downloadLogs('3.5.6', state.lastFilename); return false;" style="color:var(--primary); text-decoration:none;">Download Logs</a>
+        <div class="pipeline-logs" id="pipelineLogsPanel">
+                        <div class="log-header">
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                    <button id="toggleLogsBtn" class="btn-icon" style="width:24px; height:24px; font-size:0.7rem; background:rgba(255,255,255,0.1); color:var(--text-main);">▼</button>
+                    <strong>PIPELINE LOGS</strong>
+                </div>
+                <a href="#" id="downloadLogsBtn" style="color:var(--primary); text-decoration:none;">Download Logs</a>
             </div>
             <div id="logContent"></div>
         </div>
-
-        <!-- Modal Overlay -->
+         <!-- Modal Overlay -->
         <div id="modalOverlay" class="modal-overlay" style="display:none;">
-            <!-- Auth Modal -->
+               <!-- Auth Modal -->
             <div id="authModal" class="modal hidden" style="max-width:400px;">
                 <div class="modal-header">
                     <h3 style="margin:0">Account</h3>
@@ -1250,8 +200,8 @@
 
                     <div id="viewLogin">
                         <div style="margin-bottom:1rem;">
-                            <label style="display:block; margin-bottom:0.4rem; font-size:0.9rem; color:var(--text-muted);">Email</label>
-                            <input type="email" id="loginEmail" style="width:100%" placeholder="Enter email">
+                            <label style="display:block; margin-bottom:0.4rem; font-size:0.9rem; color:var(--text-muted);">Username</label>
+                            <input type="text" id="loginUser" style="width:100%" placeholder="Enter username">
                         </div>
                         <div style="margin-bottom:1rem;">
                             <label style="display:block; margin-bottom:0.4rem; font-size:0.9rem; color:var(--text-muted);">Password</label>
@@ -1259,7 +209,7 @@
                         </div>
                         <button id="doLoginBtn" class="primary" style="width:100%;">Log In</button>
                     </div>
-
+                    
                     <div id="viewRegister" class="hidden">
                         <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">Create an account to save your balance and settings.</p>
                         <div style="margin-bottom:1rem;">
@@ -1277,7 +227,7 @@
                         <button id="doRegisterBtn" class="primary" style="width:100%;">Register</button>
                     </div>
                 </div>
-                 </div>
+            </div>
 
             <!-- User Profile Modal -->
             <div id="userProfileModal" class="modal hidden" style="max-width:320px;">
@@ -1289,42 +239,6 @@
                     <div style="font-size:3rem; margin-bottom:0.5rem;">👤</div>
                     <h3 id="profileName" style="margin:0 0 1.5rem 0; color:var(--primary);">User</h3>
                     <button id="doLogoutBtn" class="primary" style="width:100%; background:var(--danger); border-color:var(--danger);">Log Out</button>
-                </div>
-            </div>
-
-            <!-- Currency Modal -->
-            <div id="currencyModal" class="modal hidden" style="max-width:400px;">
-                <div class="modal-header">
-                    <h3 style="margin:0">Wallet</h3>
-                    <button id="currencyClose" style="background:none; border:none; color:inherit; font-size:1.5rem; cursor:pointer;">&times;</button>
-                </div>
-                <div style="padding:0 1.25rem; margin-top:1rem;">
-                    <div class="modal-tabs">
-                        <div class="modal-tab active" id="tabSendGP">Send GP</div>
-                        <div class="modal-tab" id="tabBuyGP">Buy GP</div>
-                    </div>
-                </div>
-                <div class="modal-body">
-                    <div id="viewSendGP">
-                        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">Transfer GP to another user.</p>
-                        <div style="margin-bottom:1rem;">
-                            <label style="display:block; margin-bottom:0.4rem; font-size:0.9rem; color:var(--text-muted);">Recipient</label>
-                            <input type="text" id="sendRecipient" style="width:100%" placeholder="Username">
-                        </div>
-                        <div style="margin-bottom:1rem;">
-                            <label style="display:block; margin-bottom:0.4rem; font-size:0.9rem; color:var(--text-muted);">Amount (GP)</label>
-                            <input type="number" id="sendAmount" style="width:100%" placeholder="0" min="1">
-                        </div>
-                        <button id="doSendBtn" class="primary" style="width:100%;">Send</button>
-                    </div>
-                    <div id="viewBuyGP" class="hidden">
-                        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:1rem;">Purchase more GP.</p>
-                        <div style="margin-bottom:1rem;">
-                             <label style="display:block; margin-bottom:0.4rem; font-size:0.9rem; color:var(--text-muted);">Amount (GP)</label>
-                            <input type="number" id="buyAmount" style="width:100%" placeholder="100" min="1">
-                        </div>
-                         <button id="doBuyBtn" class="primary" style="width:100%;">Purchase</button>
-                    </div>
                 </div>
             </div>
 
@@ -1356,6 +270,7 @@
                     </div>
                 </div>
                 <div class="modal-body">
+
                     <!-- Load View -->
                     <div id="batchLoadView">
                         <p style="font-size:0.9rem; color:var(--text-muted);">Paste a batch code string to restore a shop.</p>
@@ -1409,14 +324,27 @@
                 </div>
             </div>
 
-            <!-- About Modal -->
+            <!-- Admin Users Modal -->
+            <div id="adminUsersModal" class="modal hidden" style="max-width:700px;">
+                <div class="modal-header">
+                    <h3>User Administration</h3>
+                    <button id="adminUsersClose" style="background:none; border:none; color:inherit; font-size:1.5rem; cursor:pointer;">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="adminUsersList" style="overflow-x:auto;">
+                        <p>Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+           <!-- About Modal -->
             <div id="aboutModal" class="modal hidden">
                 <div class="modal-header">
                     <h3>About D&D ShopGen</h3>
                     <button id="aboutClose" style="background:none; border:none; color:inherit; font-size:1.5rem; cursor:pointer;">&times;</button>
                 </div>
                 <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6;">
-                    <p><strong>Version:</strong> 3.5.6</p>
+                    <p><strong>Version:</strong> 3.6</p>
                     <p>A browser-based procedural generation tool for D&D 5e items and shops.</p>
                     <p>For all questions, problems, and suggestions, please contact us by <a href="mailto:Zloibigtapok@gmail.com" style="color:var(--primary)">Zloibigtapok@gmail.com</a></p>
 
